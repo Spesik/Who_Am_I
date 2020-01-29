@@ -1,13 +1,9 @@
 let Game = {
     _display: null,
     _currentScreen: null,
-    _screenWidth: 80,
-    _screenHeight: 24,
     init: function () {
-        this._display = new ROT.Display({
-            width: this._screenWidth,
-            height: this._screenHeight + 1
-        });
+        this._display = new ROT.Display({width: 80, height: 24});
+        let game = this;
         let bindEventToScreen = function (event) {
             window.addEventListener(event, function (e) {
                 if (game._currentScreen !== null) {
@@ -16,20 +12,11 @@ let Game = {
             });
         };
         bindEventToScreen('keydown');
+        bindEventToScreen('keyup');
         bindEventToScreen('keypress');
     },
     getDisplay: function () {
         return this._display;
-    },
-    getScreenWidth: function () {
-        return this._screenWidth;
-    },
-    getScreenHeight: function () {
-        return this._screenHeight;
-    },
-    refresh: function () {
-        this._display.clear();
-        this._currentScreen.render(this._display);
     },
     switchScreen: function (screen) {
         if (this._currentScreen !== null) {
@@ -39,16 +26,15 @@ let Game = {
         this._currentScreen = screen;
         if (!this._currentScreen !== null) {
             this._currentScreen.enter();
-            this.refresh();
+            this._currentScreen.render(this._display);
         }
     }
 };
 
 window.onload = function () {
     if (!ROT.isSupported()) {
-        console.log("The rot.js library isn't work.");
+        alert("The rot.js library isn't supported by your browser.");
     } else {
-        console.log('All Ok, Game is started.');
         Game.init();
         document.body.appendChild(Game.getDisplay().getContainer());
         Game.switchScreen(Game.Screen.startScreen);
