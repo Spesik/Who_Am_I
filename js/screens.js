@@ -7,7 +7,7 @@ Game.Screen.startScreen = {
         console.log('Exited start screen')
     },
     render: function (display) {
-        display.drawText(1, 1, '%c{Graoria}');
+        display.drawText(1, 1, '%c{Who Am I?}');
         display.drawText(1, 2, 'Press [Enter] to start!');
     },
     handleInput: function (inputType, inputData) {
@@ -19,27 +19,27 @@ Game.Screen.startScreen = {
     }
 };
 
-Game.screen.playScreen = {
-    enter: function () {
-        console.log('Entered start screen')
-    },
-    exit: function () {
-        console.log('Exited start screen')
-    },
-    render: function (display) {
-        display.drawText(3, 5, '%c{red}%b{white}Are you ready?');
-        display.drawText(4, 6, 'Press [Enter] to win or [Esc] to lose!');
-    },
-    handleInput: function (inputType, inputData) {
-        if (inputType === 'keydown') {
-            if (inputData.keyCode === ROT.VK_RETURN) {
-                Game.switchScreen(Game.Screen.winScreen);
-            } else if (inputData.keyCode === ROT.VK_ESCAPE) {
-                Game.switchScreen(Game.Screen.loseScreen);
-            }
-        }
-    }
-};
+// Game.screen.playScreen = {
+//     enter: function () {
+//         console.log('Entered start screen')
+//     },
+//     exit: function () {
+//         console.log('Exited start screen')
+//     },
+//     render: function (display) {
+//         display.drawText(3, 5, '%c{red}%b{white}Are you ready?');
+//         display.drawText(4, 6, 'Press [Enter] to win or [Esc] to lose!');
+//     },
+//     handleInput: function (inputType, inputData) {
+//         if (inputType === 'keydown') {
+//             if (inputData.keyCode === ROT.VK_RETURN) {
+//                 Game.switchScreen(Game.Screen.winScreen);
+//             } else if (inputData.keyCode === ROT.VK_ESCAPE) {
+//                 Game.switchScreen(Game.Screen.loseScreen);
+//             }
+//         }
+//     }
+// };
 
 Game.Screen.winScreen = {
     enter: function() {    console.log("Entered win screen."); },

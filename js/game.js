@@ -1,24 +1,37 @@
 let Game = {
     _display: null,
     _currentScreen: null,
+    _screenWidth: 80,
+    _screenHeight: 24,
     init: function () {
-        this._display = new ROT.Display({width: 80, height: 24});
-        let game = this;
-        let BindEventToScreen = function (event) {
+        this._display = new ROT.Display({
+            width: this._screenWidth,
+            height: this._screenHeight + 1
+        });
+        let bindEventToScreen = function (event) {
             window.addEventListener(event, function (e) {
                 if (game._currentScreen !== null) {
-                    game._currentScreen.handleInput(event, e)
+                    game._currentScreen.handleInput(event, e);
                 }
             });
         };
-        // bindEventToScreen('keydown');
-        // bindEventToScreen('keyup');
-        // bindEventToScreen('keypress');
+        bindEventToScreen('keydown');
+        bindEventToScreen('keypress');
     },
     getDisplay: function () {
         return this._display;
     },
-    switchScreen: function () {
+    getScreenWidth: function () {
+        return this._screenWidth;
+    },
+    getScreenHeight: function () {
+        return this._screenHeight;
+    },
+    refresh: function () {
+        this._display.clear();
+        this._currentScreen.render(this._display);
+    },
+    switchScreen: function (screen) {
         if (this._currentScreen !== null) {
             this._currentScreen.exit();
         }
@@ -26,13 +39,14 @@ let Game = {
         this._currentScreen = screen;
         if (!this._currentScreen !== null) {
             this._currentScreen.enter();
-            this._currentScreen.render(this._display);
+            this.refresh();
         }
     }
 };
+
 window.onload = function () {
     if (!ROT.isSupported()) {
-        console.log("Sorry, but something isn't working.");
+        console.log("The rot.js library isn't work.");
     } else {
         console.log('All Ok, Game is started.');
         Game.init();
