@@ -21,15 +21,43 @@ Game.Screen.startScreen = {
 };
 
 Game.Screen.playScreen = {
-    enter: function () {
-        console.log("Entered play screen.");
+    _map: null,
+    enter: function() {
+        let map = [];
+        for (let x = 0; x < 80; x++) {
+            map.push([]);
+            for (let y = 0; y < 24; y++) {
+                map[x].push(Game.Tile.nullTile);
+            }
+        }
+        let generator = new ROT.Map.Cellular(80, 24);
+        generator.randomize(0.5);
+        let totalIterations = 3;
+        for (let i = 0; i < totalIterations - 1; i++) {
+            generator.create();
+        }
+        generator.create(function(x,y,v) {
+            if (v === 1) {
+                map[x][y] = Game.Tile.floorTile;
+            } else {
+                map[x][y] = Game.Tile.wallTile;
+            }
+        });
+        this._map = new Game.Map(map);
     },
     exit: function () {
         console.log("Exited play screen.");
     },
     render: function (display) {
-        display.drawText(3, 5, "%c{red}%b{white}This game is so much fun!");
-        display.drawText(4, 6, "Press [Enter] to win, or [Esc] to lose!");
+        for (let x = 0; x < this._map.getWidth(); x++) {
+            for (let y = 0; y < this._map.getHeight(); y++) {
+                let glyph = this._map.getTile(x, y).getGlyph();
+                display.draw(x, y,
+                    glyph.getChar(),
+                    glyph.getForeground(),
+                    glyph.getBackground());
+            }
+        }
     },
     handleInput: function (inputType, inputData) {
         if (inputType === 'keydown') {
