@@ -23,8 +23,8 @@ Game.Screen.startScreen = {
 
 // Create playing screen
 Game.Screen.playScreen = {
-    _centerX: 0,
-    _centerY: 0,
+    _map: null,
+    _player: null,
     enter: function () {
         let map = [];
         // Create a map based on parameters
@@ -53,6 +53,11 @@ Game.Screen.playScreen = {
             }
         });
         this._map = new Game.Map(map);
+        // Create player and set the position
+        this._player = new Game.Entity(Game.PlayerTemplate);
+        let position = this._map.getRandomFloorPosition();
+        this._player.setX(position.x);
+        this._player.setY(position.y);
     },
     exit: function () {
         console.log("Exited play screen.");
@@ -60,28 +65,29 @@ Game.Screen.playScreen = {
     render: function (display) {
         let screenWidth = Game.getScreenWidth();
         let screenHeight = Game.getScreenHeight();
-        let topLeftX = Math.max(0, this._centerX - (screenWidth / 2));
+        let topLeftX = Math.max(0, this._player.getX() - (screenWidth / 2));
         topLeftX = Math.min(topLeftX, this._map.getWidth() - screenWidth);
-        let topLeftY = Math.max(0, this._centerY - (screenHeight / 2));
+        let topLeftY = Math.max(0, this._player.getY() - (screenHeight / 2));
         topLeftY = Math.min(topLeftY, this._map.getHeight() - screenHeight);
         for (let x = topLeftX; x < topLeftX + screenWidth; x++) {
             for (let y = topLeftY; y < topLeftY + screenHeight; y++) {
-                let glyph = this._map.getTile(x, y).getGlyph();
+                let tile = this._map.getTile(x, y);
                 display.draw(
                     x - topLeftX,
                     y - topLeftY,
-                    glyph.getChar(),
-                    glyph.getForeground(),
-                    glyph.getBackground());
+                    tile.getChar(),
+                    tile.getForeground(),
+                    tile.getBackground());
             }
         }
         // Render the Hero
         display.draw(
-            this._centerX - topLeftX,
-            this._centerY - topLeftY,
-            '@',
-            'white',
-            'black');
+            this._player.getX() - topLeftX,
+            this._player.getY() - topLeftY,
+            this._player.getChar(),
+            this._player.getForeground(),
+            this._player.getBackground()
+        );
     },
     handleInput: function (inputType, inputData) {
         if (inputType === 'keydown') {
@@ -103,10 +109,10 @@ Game.Screen.playScreen = {
         }
     },
     move: function (dX, dY) {
-        this._centerX = Math.max(0,
-            Math.min(this._map.getWidth() - 1, this._centerX + dX));
-        this._centerY = Math.max(0,
-            Math.min(this._map.getHeight() - 1, this._centerY + dY));
+        let newX = this._player.getX() + dX;
+        let newY = this._player.getY() + dY;
+        // Try to move to the new cell
+        this._player.tryMove(newX, newY, this._map);
     }
 };
 
