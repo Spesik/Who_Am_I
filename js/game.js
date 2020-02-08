@@ -11,8 +11,6 @@ let Game = {
             window.addEventListener(event, function (e) {
                 if (game._currentScreen !== null) {
                     game._currentScreen.handleInput(event, e);
-                    game._display.clear(); // Clear the screen
-                    game._currentScreen.render(game._display);
                 }
             });
         };
@@ -28,6 +26,10 @@ let Game = {
     },
     getScreenHeight: function() {
         return this._screenHeight;
+    },
+    refresh: function() {
+        this._display.clear();
+        this._currentScreen.render(this._display);
     },
     switchScreen: function (screen) {
         if (this._currentScreen !== null) {

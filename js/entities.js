@@ -4,10 +4,13 @@ Game.Mixins = {};
 // Define Moveable mixin
 Game.Mixins.Moveable = {
     name: 'Moveable',
-    tryMove: function(x, y, map) {
+    tryMove: function (x, y, map) {
         let tile = map.getTile(x, y);
+        let target = map.getEntityAt(x, y);
         // Check if can walk on the tile and if so simply walk into it
-        if (tile.isWalkable()) {
+        if (target) {
+            return false
+        } else if (tile.isWalkable()) {
             // Update the object's position
             this._x = x;
             this._y = y;
@@ -22,10 +25,35 @@ Game.Mixins.Moveable = {
     }
 };
 
+// Main player's actor mixin
+Game.Mixins.PlayerActor = {
+    name: 'PlayerActor',
+    groupName: 'Actor',
+    act: function () {
+        // Re-render screen
+        Game.refresh();
+        this.getMap().getEngine().lock();
+    }
+};
+
+Game.Mixins.FungusActor = {
+    name: 'FungusActor',
+    group: 'Actor',
+    act: function () {
+        //TODO
+    }
+};
+
 // Player template
 Game.PlayerTemplate = {
     character: '@',
     foreground: 'white',
     background: 'black',
-    mixins: [Game.Mixins.Moveable]
+    mixins: [Game.Mixins.Moveable, Game.Mixins.PlayerActor]
+};
+
+Game.FungusTemplate = {
+    character: 'F',
+    foreground: 'green',
+    mixins: [Game.Mixins.Moveable, Game.Mixins.FungusActor]
 };
