@@ -95,6 +95,18 @@ Game.Screen.playScreen = {
                 );
             }
         }
+        let messages = this._player.getMessages();
+        let messageY = 0;
+        for (let i = 0; i < messages.length; i++) {
+            // Draw each messages
+            messageY += display.drawText(
+                0, messageY,
+                '%c{white}%b{black}' + messages[i])
+        }
+        // Render player HP
+        let stats = '%c{white}%b{black}';
+        stats += vsprintf(' HP: %d/%d ', [this._player.getHp(), this._player.getMaxHp()]);
+        display.drawText(0, screenHeight, stats);
     },
     handleInput: function (inputType, inputData) {
         if (inputType === 'keydown') {

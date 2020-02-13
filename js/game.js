@@ -5,7 +5,7 @@ let Game = {
     _screenHeight: 24,
     init: function () {
         this._display = new ROT.Display({width: this._screenWidth,
-                                            height: this._screenHeight});
+                                            height: this._screenHeight + 1});
         let game = this;
         let bindEventToScreen = function (event) {
             window.addEventListener(event, function (e) {

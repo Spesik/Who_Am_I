@@ -64,6 +64,25 @@ Game.Map.prototype.getEntityAt = function (x, y) {
     return false;
 };
 
+Game.Map.prototype.getEntitiesWithinRadius = function (centerX, centerY, radius) {
+    let results = [];
+    // Determine bounds
+    let leftX = centerX - radius;
+    let rightX = centerX + radius;
+    let topY = centerY - radius;
+    let bottomY = centerY + radius;
+    // Iterate through entities, adding any which are within the bounds
+    for (let i = 0; i < this._entities.length; i++) {
+        if (this._entities[i].getX() >= leftX &&
+            this._entities[i].getX() <= rightX &&
+            this._entities[i].getY() >= topY &&
+            this._entities[i].getY() <= bottomY) {
+                results.push(this._entities[i])
+        }
+    }
+    return results;
+};
+
 Game.Map.prototype.addEntity = function (entity) {
     if (entity.getX() < 0 || entity.getX() >= this._width ||
         entity.getY() < 0 || entity.getY() >= this._height) {
