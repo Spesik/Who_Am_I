@@ -39,14 +39,14 @@ let Game = {
         this._currentScreen = screen;
         if (!this._currentScreen !== null) {
             this._currentScreen.enter();
-            this._currentScreen.render(this._display);
+            this.refresh();
         }
     }
 };
 
 window.onload = function () {
     if (!ROT.isSupported()) {
-        alert("The rot.js library isn't supported by your browser.");
+        console.log("The rot.js library isn't supported by your browser.");
     } else {
         Game.init();
         document.body.appendChild(Game.getDisplay().getContainer());

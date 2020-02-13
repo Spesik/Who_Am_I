@@ -9,7 +9,12 @@ Game.Mixins.Moveable = {
         let target = map.getEntityAt(x, y);
         // Check if can walk on the tile and if so simply walk into it
         if (target) {
-            return false
+            if (this.hasMixin('Attacker')) {
+                this.attack.target;
+                return true;
+            } else {
+                return false;
+            }
         } else if (tile.isWalkable()) {
             // Update the object's position
             this._x = x;
@@ -39,21 +44,63 @@ Game.Mixins.PlayerActor = {
 Game.Mixins.FungusActor = {
     name: 'FungusActor',
     group: 'Actor',
+    init: function () {
+        this._growthsRemaining = 5;
+    },
     act: function () {
-        //TODO
+        if (this._growthsRemaining > 0) {
+            if (Math.random() <= 0.02) {
+                let xOffset = Math.floor(Math.random() * 3) - 1;
+                let yOffset = Math.floor(Math.random() * 3) - 1;
+                if (xOffset !== 0 || yOffset !== 0) {
+                    if (this.getMap().isEmptyFloor(this.getX() + xOffset, this.getY() + yOffset)) {
+                        let entity = new Game.Entity(Game.FungusTemplate);
+                        entity.setX(this.getX() + xOffset);
+                        entity.setY(this.getY() + yOffset);
+                        this.getMap().addEntity(entity);
+                        this._growthsRemaining--;
+                    }
+                }
+            }
+        }
     }
 };
 
-// Player template
+Game.Mixins.SimpleAttacker = {
+    name: "SimpleAttacker",
+    groupName: "Attacker",
+    attack: function (target) {
+        // Only remove the entity if they were attackable
+        if (target.hasMixin('Destructible')) {
+            target.takeDamage(this, 1);
+        }
+    }
+};
+
+// This mixin signifies an entity can take damage and be destroyed
+Game.Mixins.Destructible = {
+    name: "Destructible",
+    init: function () {
+        this._hp = 1;
+    },
+    takeDamage: function (attacker, damage) {
+        this._hp -= damage;
+        // if hp <= 0,remove from the map
+        if (this._hp <= 0) {
+            this.getMap().removeEntity(this);
+        }
+    }
+};
+
 Game.PlayerTemplate = {
     character: '@',
     foreground: 'white',
     background: 'black',
-    mixins: [Game.Mixins.Moveable, Game.Mixins.PlayerActor]
+    mixins: [Game.Mixins.Moveable, Game.Mixins.PlayerActor, Game.Mixins.SimpleAttacker, Game.Mixins.Destructible]
 };
 
 Game.FungusTemplate = {
     character: 'F',
     foreground: 'green',
-    mixins: [Game.Mixins.Moveable, Game.Mixins.FungusActor]
+    mixins: [Game.Mixins.Moveable, Game.Mixins.FungusActor, Game.Mixins.SimpleAttacker, Game.Mixins.Destructible]
 };
