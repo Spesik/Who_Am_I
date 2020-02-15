@@ -73,7 +73,7 @@ Game.Builder.prototype._canFillRegion = function(x, y, z) {
         return false;
     }
     // Make sure the tile is walkable
-    return this._tiles[z][x][y].isWalkable();
+    return this._tiles[z][x][y].walkable();
 };
 
 Game.Builder.prototype._fillRegion = function(region, x, y, z) {

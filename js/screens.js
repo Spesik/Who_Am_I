@@ -2,10 +2,10 @@ Game.Screen = {};
 
 // Create start screen
 Game.Screen.startScreen = {
-    enter: function() {
+    enter: function () {
         console.log("Entered start screen.");
     },
-    exit: function() {
+    exit: function () {
         console.log("Exited start screen.");
     },
     render: function (display) {
@@ -25,7 +25,7 @@ Game.Screen.startScreen = {
 Game.Screen.playScreen = {
     _map: null,
     _player: null,
-    enter: function() {
+    enter: function () {
         // Create a map based on parameters
         let width = 100;
         let height = 48;
@@ -38,7 +38,7 @@ Game.Screen.playScreen = {
         // Start the map's engine
         this._map.getEngine().start();
     },
-    exit: function() {
+    exit: function () {
         console.log("Exited play screen.");
     },
     render: function (display) {
@@ -48,15 +48,25 @@ Game.Screen.playScreen = {
         topLeftX = Math.min(topLeftX, this._map.getWidth() - screenWidth);
         let topLeftY = Math.max(0, this._player.getY() - (screenHeight / 2));
         topLeftY = Math.min(topLeftY, this._map.getHeight() - screenHeight);
+        let visibleCells = {};
+        // Find all visible cells and update the object
+        this._map.getFov(this._player.getZ()).compute(
+            this._player.getX(), this._player.getY(),
+            this._player.getSightRadius(),
+            function (x, y, radius, visibility) {
+                visibleCells[x + "," + y] = true;
+            });
         for (let x = topLeftX; x < topLeftX + screenWidth; x++) {
             for (let y = topLeftY; y < topLeftY + screenHeight; y++) {
-                let tile = this._map.getTile(x, y, this._player.getZ());
-                display.draw(
-                    x - topLeftX,
-                    y - topLeftY,
-                    tile.getChar(),
-                    tile.getForeground(),
-                    tile.getBackground());
+                if (visibleCells[x + ',' + y]) {
+                    let tile = this._map.getTile(x, y, this._player.getZ());
+                    display.draw(
+                        x - topLeftX,
+                        y - topLeftY,
+                        tile.getChar(),
+                        tile.getForeground(),
+                        tile.getBackground());
+                }
             }
         }
         // Render the Hero
@@ -67,13 +77,15 @@ Game.Screen.playScreen = {
                 entity.getX() < topLeftX + screenWidth &&
                 entity.getY() < topLeftY + screenHeight &&
                 entity.getZ() === this._player.getZ()) {
-                display.draw(
-                    entity.getX() - topLeftX,
-                    entity.getY() - topLeftY,
-                    entity.getChar(),
-                    entity.getForeground(),
-                    entity.getBackground()
-                );
+                if (visibleCells[entity.getX() + ',' + entity.getY()]) {
+                    display.draw(
+                        entity.getX() - topLeftX,
+                        entity.getY() - topLeftY,
+                        entity.getChar(),
+                        entity.getForeground(),
+                        entity.getBackground()
+                    );
+                }
             }
         }
         let messages = this._player.getMessages();
@@ -84,7 +96,7 @@ Game.Screen.playScreen = {
                 0, messageY,
                 '%c{white}%b{black}' + messages[i])
         }
-        // Render player HP
+// Render player HP
         let stats = '%c{white}%b{black}';
         stats += vsprintf(' HP: %d/%d ', [this._player.getHp(), this._player.getMaxHp()]);
         display.drawText(0, screenHeight, stats);
@@ -124,7 +136,8 @@ Game.Screen.playScreen = {
             // Unlock the engine
             this._map.getEngine().unlock();
         }
-    },
+    }
+    ,
     move: function (dX, dY, dZ) {
         let newX = this._player.getX() + dX;
         let newY = this._player.getY() + dY;
@@ -132,14 +145,15 @@ Game.Screen.playScreen = {
         // Try to move to the new cell
         this._player.tryMove(newX, newY, newZ, this._map);
     }
-};
+}
+;
 
 // Create winning screen
 Game.Screen.winScreen = {
-    enter: function() {
+    enter: function () {
         console.log("Entered win screen.");
     },
-    exit: function() {
+    exit: function () {
         console.log("Exited win screen.");
     },
     render: function (display) {
@@ -152,25 +166,25 @@ Game.Screen.winScreen = {
             display.drawText(2, i + 1, "%b{" + background + "}You win!");
         }
     },
-    handleInput: function(inputType, inputData) {
+    handleInput: function (inputType, inputData) {
         // TODO
     }
 };
 
 // Create losing screen
 Game.Screen.loseScreen = {
-    enter: function() {
+    enter: function () {
         console.log("Entered lose screen.");
     },
-    exit: function() {
+    exit: function () {
         console.log("Exited lose screen.");
     },
-    render: function(display) {
+    render: function (display) {
         for (let i = 0; i < 22; i++) {
             display.drawText(2, i + 1, "%b{red}You lose! :(");
         }
     },
-    handleInput: function(inputType, inputData) {
+    handleInput: function (inputType, inputData) {
         // TODO
     }
 };
