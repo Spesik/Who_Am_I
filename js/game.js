@@ -3,12 +3,12 @@ let Game = {
     _currentScreen: null,
     _screenWidth: 80,
     _screenHeight: 24,
-    init: function () {
+    init: function() {
         this._display = new ROT.Display({width: this._screenWidth,
                                             height: this._screenHeight + 1});
         let game = this;
-        let bindEventToScreen = function (event) {
-            window.addEventListener(event, function (e) {
+        let bindEventToScreen = function(event) {
+            window.addEventListener(event,  function(e) {
                 if (game._currentScreen !== null) {
                     game._currentScreen.handleInput(event, e);
                 }
@@ -16,9 +16,9 @@ let Game = {
         };
         bindEventToScreen('keydown');
         // bindEventToScreen('keyup');
-        // bindEventToScreen('keypress');
+        bindEventToScreen('keypress');
     },
-    getDisplay: function () {
+    getDisplay: function() {
         return this._display;
     },
     getScreenWidth: function() {
@@ -44,7 +44,7 @@ let Game = {
     }
 };
 
-window.onload = function () {
+window.onload = function() {
     if (!ROT.isSupported()) {
         console.log("The rot.js library isn't supported by your browser.");
     } else {

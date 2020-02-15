@@ -4,11 +4,26 @@ Game.Mixins = {};
 // Define Moveable mixin
 Game.Mixins.Moveable = {
     name: 'Moveable',
-    tryMove: function (x, y, map) {
-        let tile = map.getTile(x, y);
-        let target = map.getEntityAt(x, y);
-        // Check if can walk on the tile and if so simply walk into it
-        if (target) {
+    tryMove: function(x, y, z, map) {
+        map = this.getMap();
+        let tile = map.getTile(x, y, this.getZ());
+        let target = map.getEntityAt(x, y, this.getZ());
+        if (z < this.getZ()) {
+            if (tile !== Game.Tile.stairsUpTile) {
+                Game.sendMessage(this, "You can't go up here!");
+            } else {
+                Game.sendMessage(this, "You ascend to level %d!", [z + 1]);
+                this.setPosition(x, y, z);
+            }
+        } else if (z > this.getZ()) {
+            if (tile !== Game.Tile.stairsDownTile) {
+                Game.sendMessage(this, "You can't go down here!");
+            } else {
+                this.setPosition(x, y, z);
+                Game.sendMessage(this, "You descend to level %d!", [z + 1]);
+            }
+            // Check if can walk on the tile and if so simply walk into it
+        } else if (target) {
             if (this.hasMixin('Attacker')) {
                 this.attack(target);
                 return true;
@@ -17,13 +32,12 @@ Game.Mixins.Moveable = {
             }
         } else if (tile.isWalkable()) {
             // Update the object's position
-            this._x = x;
-            this._y = y;
+            this.setPosition(x, y, z);
             return true;
             // Check if the tile is diggable, and
             // if so try to dig it
         } else if (tile.isDiggable()) {
-            map.dig(x, y);
+            map.dig(x, y, z);
             return true;
         }
         return false;
@@ -34,7 +48,7 @@ Game.Mixins.Moveable = {
 Game.Mixins.PlayerActor = {
     name: 'PlayerActor',
     groupName: 'Actor',
-    act: function () {
+    act: function() {
         // Re-render screen
         Game.refresh();
         this.getMap().getEngine().lock();
@@ -45,24 +59,25 @@ Game.Mixins.PlayerActor = {
 Game.Mixins.FungusActor = {
     name: 'FungusActor',
     groupName: 'Actor',
-    init: function () {
+    init: function() {
         this._growthsRemaining = 5;
     },
-    act: function () {
+    act: function() {
         if (this._growthsRemaining > 0) {
             if (Math.random() <= 0.02) {
                 let xOffset = Math.floor(Math.random() * 3) - 1;
                 let yOffset = Math.floor(Math.random() * 3) - 1;
-                if (xOffset != 0 || yOffset != 0) {
-                    if (this.getMap().isEmptyFloor(this.getX() + xOffset, this.getY() + yOffset)) {
+                if (xOffset !== 0 || yOffset !== 0) {
+                    if (this.getMap().isEmptyFloor(this.getX() + xOffset,
+                                                   this.getY() + yOffset,
+                                                      this.getZ())) {
                         let entity = new Game.Entity(Game.FungusTemplate);
-                        entity.setX(this.getX() + xOffset);
-                        entity.setY(this.getY() + yOffset);
+                        entity.setPosition(this.getX() + xOffset, this.getY() + yOffset, this.getZ());
                         this.getMap().addEntity(entity);
                         this._growthsRemaining--;
                         // Send a message nearby
                         Game.sendMessageNearby(this.getMap(),
-                            entity.getX(), entity.getY(),
+                            entity.getX(), entity.getY(), entity.getZ(),
                             'The Fungus is spending!')
                     }
                 }
@@ -74,13 +89,13 @@ Game.Mixins.FungusActor = {
 Game.Mixins.Attacker = {
     name: "Attacker",
     groupName: "Attacker",
-    init: function (template) {
+    init: function(template) {
         this._attackValue = template['attackValue'] || 1;
     },
-    getAttackValue: function () {
+    getAttackValue: function() {
         return this._attackValue;
     },
-    attack: function (target) {
+    attack: function(target) {
         if (target.hasMixin('Destructible')) {
             let attack = this.getAttackValue();
             let defense = target.getDefenseValue();
@@ -99,7 +114,7 @@ Game.Mixins.Attacker = {
 // This mixin signifies an entity can take damage and be destroyed
 Game.Mixins.Destructible = {
     name: "Destructible",
-    init: function (template) {
+    init: function(template) {
         this._maxHp = template['maxHp'] || 10;
         this._hp = template['hp'] || this._maxHp;
         this._defenseValue = template['defenseValue'] || 0;
@@ -113,7 +128,7 @@ Game.Mixins.Destructible = {
     getMaxHp: function() {
         return this._maxHp;
     },
-    takeDamage: function (attacker, damage) {
+    takeDamage: function(attacker, damage) {
         this._hp -= damage;
         // if hp <= 0,remove from the map
         if (this._hp <= 0) {
@@ -126,21 +141,21 @@ Game.Mixins.Destructible = {
 
 Game.Mixins.MessageRecipient = {
     name: 'MessageRecipient',
-    init: function (template) {
+    init: function(template) {
         this._messages = [];
     },
-    receiveMessage: function (message) {
+    receiveMessage: function(message) {
         this._messages.push(message)
     },
-    getMessages: function () {
+    getMessages: function() {
         return this._messages;
     },
-    clearMessages: function () {
+    clearMessages: function() {
         this._messages = [];
     }
 };
 
-Game.sendMessage = function (recipient, message, args) {
+Game.sendMessage = function(recipient, message, args) {
     if (recipient.hasMixin(Game.Mixins.MessageRecipient)) {
         if (args) {
             message = vsprintf(message, args);
@@ -149,11 +164,11 @@ Game.sendMessage = function (recipient, message, args) {
     }
 };
 
-Game.sendMessageNearby = function (map, centerX, centerY, message, args) {
+Game.sendMessageNearby = function(map, centerX, centerY, centerZ, message, args) {
     if (args) {
         message = vsprintf(message, args);
     }
-    let entities = map.getEntitiesWithinRadius(centerX, centerY, 5);
+    let entities = map.getEntitiesWithinRadius(centerX, centerY, centerZ, 5);
     for (let i = 0; i < entities.length; i++) {
         if (entities[i].hasMixin(Game.Mixins.MessageRecipient)) {
             entities[i].receiveMessage(message);

@@ -2,10 +2,10 @@ Game.Screen = {};
 
 // Create start screen
 Game.Screen.startScreen = {
-    enter: function () {
+    enter: function() {
         console.log("Entered start screen.");
     },
-    exit: function () {
+    exit: function() {
         console.log("Exited start screen.");
     },
     render: function (display) {
@@ -25,40 +25,20 @@ Game.Screen.startScreen = {
 Game.Screen.playScreen = {
     _map: null,
     _player: null,
-    enter: function () {
-        let map = [];
+    enter: function() {
         // Create a map based on parameters
-        let mapWidth = 100;
-        let mapHeight = 48;
-        for (let x = 0; x < mapWidth; x++) {
-            // Array for the y values
-            map.push([]);
-            // Add all the tiles
-            for (let y = 0; y < mapHeight; y++) {
-                map[x].push(Game.Tile.nullTile);
-            }
-        }
-        // Map generator
-        let generator = new ROT.Map.Cellular(mapWidth, mapHeight);
-        generator.randomize(0.5);
-        let totalIterations = 3;
-        for (let i = 0; i < totalIterations - 1; i++) {
-            generator.create();
-        }
-        generator.create(function (x, y, v) {
-            if (v === 1) {
-                map[x][y] = Game.Tile.floorTile;
-            } else {
-                map[x][y] = Game.Tile.wallTile;
-            }
-        });
+        let width = 100;
+        let height = 48;
+        let depth = 6;
+        // Create our map from the tiles and player
+        let tiles = new Game.Builder(width, height, depth).getTiles();
         // Create player and set the position
         this._player = new Game.Entity(Game.PlayerTemplate);
-        this._map = new Game.Map(map, this._player);
+        this._map = new Game.Map(tiles, this._player);
         // Start the map's engine
         this._map.getEngine().start();
     },
-    exit: function () {
+    exit: function() {
         console.log("Exited play screen.");
     },
     render: function (display) {
@@ -70,7 +50,7 @@ Game.Screen.playScreen = {
         topLeftY = Math.min(topLeftY, this._map.getHeight() - screenHeight);
         for (let x = topLeftX; x < topLeftX + screenWidth; x++) {
             for (let y = topLeftY; y < topLeftY + screenHeight; y++) {
-                let tile = this._map.getTile(x, y);
+                let tile = this._map.getTile(x, y, this._player.getZ());
                 display.draw(
                     x - topLeftX,
                     y - topLeftY,
@@ -85,7 +65,8 @@ Game.Screen.playScreen = {
             let entity = entities[i];
             if (entity.getX() >= topLeftX && entity.getY() >= topLeftY &&
                 entity.getX() < topLeftX + screenWidth &&
-                entity.getY() < topLeftY + screenHeight) {
+                entity.getY() < topLeftY + screenHeight &&
+                entity.getZ() === this._player.getZ()) {
                 display.draw(
                     entity.getX() - topLeftX,
                     entity.getY() - topLeftY,
@@ -117,33 +98,48 @@ Game.Screen.playScreen = {
             } else {
                 // Movement
                 if (inputData.keyCode === ROT.VK_LEFT) {
-                    this.move(-1, 0);
+                    this.move(-1, 0, 0);
                 } else if (inputData.keyCode === ROT.VK_RIGHT) {
-                    this.move(1, 0);
+                    this.move(1, 0, 0);
                 } else if (inputData.keyCode === ROT.VK_UP) {
-                    this.move(0, -1);
+                    this.move(0, -1, 0);
                 } else if (inputData.keyCode === ROT.VK_DOWN) {
-                    this.move(0, 1);
+                    this.move(0, 1, 0);
+                } else {
+                    return;
                 }
                 //Unlock the engine
                 this._map.getEngine().unlock();
             }
+        } else if (inputType === 'keypress') {
+            let keyChar = String.fromCharCode(inputData.charCode);
+            if (keyChar === '>') {
+                this.move(0, 0, 1);
+            } else if (keyChar === '<') {
+                this.move(0, 0, -1);
+            } else {
+                // Not a valid key
+                return;
+            }
+            // Unlock the engine
+            this._map.getEngine().unlock();
         }
     },
-    move: function (dX, dY) {
+    move: function (dX, dY, dZ) {
         let newX = this._player.getX() + dX;
         let newY = this._player.getY() + dY;
+        let newZ = this._player.getZ() + dZ;
         // Try to move to the new cell
-        this._player.tryMove(newX, newY, this._map);
+        this._player.tryMove(newX, newY, newZ, this._map);
     }
 };
 
 // Create winning screen
 Game.Screen.winScreen = {
-    enter: function () {
+    enter: function() {
         console.log("Entered win screen.");
     },
-    exit: function () {
+    exit: function() {
         console.log("Exited win screen.");
     },
     render: function (display) {
@@ -156,25 +152,25 @@ Game.Screen.winScreen = {
             display.drawText(2, i + 1, "%b{" + background + "}You win!");
         }
     },
-    handleInput: function (inputType, inputData) {
+    handleInput: function(inputType, inputData) {
         // TODO
     }
 };
 
 // Create losing screen
 Game.Screen.loseScreen = {
-    enter: function () {
+    enter: function() {
         console.log("Entered lose screen.");
     },
-    exit: function () {
+    exit: function() {
         console.log("Exited lose screen.");
     },
-    render: function (display) {
+    render: function(display) {
         for (let i = 0; i < 22; i++) {
             display.drawText(2, i + 1, "%b{red}You lose! :(");
         }
     },
-    handleInput: function (inputType, inputData) {
+    handleInput: function(inputType, inputData) {
         // TODO
     }
 };
