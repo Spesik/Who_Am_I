@@ -49,23 +49,29 @@ Game.Screen.playScreen = {
         let topLeftY = Math.max(0, this._player.getY() - (screenHeight / 2));
         topLeftY = Math.min(topLeftY, this._map.getHeight() - screenHeight);
         let visibleCells = {};
+        let map = this._map;
+        let currentDepth = this._player.getZ();
         // Find all visible cells and update the object
-        this._map.getFov(this._player.getZ()).compute(
+        map.getFov(currentDepth).compute(
             this._player.getX(), this._player.getY(),
             this._player.getSightRadius(),
             function (x, y, radius, visibility) {
                 visibleCells[x + "," + y] = true;
+                map.setExplored(x, y, currentDepth, true)
             });
         for (let x = topLeftX; x < topLeftX + screenWidth; x++) {
             for (let y = topLeftY; y < topLeftY + screenHeight; y++) {
-                if (visibleCells[x + ',' + y]) {
-                    let tile = this._map.getTile(x, y, this._player.getZ());
+                if (map.isExplored(x, y, currentDepth)) {
+                    let tile = this._map.getTile(x, y, currentDepth);
+                    let foreground = visibleCells[x + ',' + y] ?
+                        tile.getForeground() : 'darkGray';
                     display.draw(
                         x - topLeftX,
                         y - topLeftY,
                         tile.getChar(),
-                        tile.getForeground(),
-                        tile.getBackground());
+                        foreground,
+                        tile.getBackground()
+                    );
                 }
             }
         }

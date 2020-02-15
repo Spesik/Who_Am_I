@@ -25,7 +25,7 @@ Game.Tile.floorTile = new Game.Tile({
     blocksLight: false
 });
 Game.Tile.wallTile = new Game.Tile({
-    character: '#',
+    character: '∭',
     foreground: 'goldenrod',
     diggable: true
 });
