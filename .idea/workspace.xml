@@ -1,18 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="76b41bd2-58f1-4713-88c0-91d63ea9ba31" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/js/item.js" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/js/items.js" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/js/repository.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/index.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/js/entities.js" beforeDir="false" afterPath="$PROJECT_DIR$/js/entities.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/js/entity.js" beforeDir="false" afterPath="$PROJECT_DIR$/js/entity.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/js/map.js" beforeDir="false" afterPath="$PROJECT_DIR$/js/map.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/js/screens.js" beforeDir="false" afterPath="$PROJECT_DIR$/js/screens.js" afterDir="false" />
-    </list>
+    <list default="true" id="76b41bd2-58f1-4713-88c0-91d63ea9ba31" name="Default Changelist" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
