@@ -25,6 +25,7 @@ Game.Screen.startScreen = {
 Game.Screen.playScreen = {
     _map: null,
     _player: null,
+    _gameEnded: false,
     enter: function () {
         // Create a map based on parameters
         let width = 100;
@@ -62,35 +63,26 @@ Game.Screen.playScreen = {
         for (let x = topLeftX; x < topLeftX + screenWidth; x++) {
             for (let y = topLeftY; y < topLeftY + screenHeight; y++) {
                 if (map.isExplored(x, y, currentDepth)) {
-                    let tile = this._map.getTile(x, y, currentDepth);
-                    let foreground = visibleCells[x + ',' + y] ?
-                        tile.getForeground() : 'darkGray';
+                    let glyph = this._map.getTile(x, y, currentDepth);
+                    let foreground = glyph.getForeground();
+                    if (visibleCells[x + ',' + y]) {
+                        let items = map.getItemsAt(x, y, currentDepth);
+                        if (items) {
+                            glyph = items[items.length - 1];
+                        }
+                        if (map.getEntityAt(x, y, currentDepth)) {
+                            glyph = map.getEntityAt(x, y, currentDepth);
+                        }
+                        foreground = glyph.getForeground();
+                    } else {
+                        foreground = 'darkGray';
+                    }
                     display.draw(
                         x - topLeftX,
                         y - topLeftY,
-                        tile.getChar(),
+                        glyph.getChar(),
                         foreground,
-                        tile.getBackground()
-                    );
-                }
-            }
-        }
-        // Render the Hero
-        let entities = this._map.getEntities();
-        for (let i = 0; i < entities.length; i++) {
-            let entity = entities[i];
-            if (entity.getX() >= topLeftX && entity.getY() >= topLeftY &&
-                entity.getX() < topLeftX + screenWidth &&
-                entity.getY() < topLeftY + screenHeight &&
-                entity.getZ() === this._player.getZ()) {
-                if (visibleCells[entity.getX() + ',' + entity.getY()]) {
-                    display.draw(
-                        entity.getX() - topLeftX,
-                        entity.getY() - topLeftY,
-                        entity.getChar(),
-                        entity.getForeground(),
-                        entity.getBackground()
-                    );
+                        glyph.getBackground());
                 }
             }
         }
@@ -102,12 +94,19 @@ Game.Screen.playScreen = {
                 0, messageY,
                 '%c{white}%b{black}' + messages[i])
         }
-// Render player HP
+        // Render player HP
         let stats = '%c{white}%b{black}';
         stats += vsprintf(' HP: %d/%d ', [this._player.getHp(), this._player.getMaxHp()]);
         display.drawText(0, screenHeight, stats);
     },
     handleInput: function (inputType, inputData) {
+        if (this._gameEnded) {
+            if (inputType === 'keydown' && inputData.keyCode === ROT.VK_RETURN) {
+                Game.switchScreen(Game.Screen.loseScreen);
+            }
+            // Return to make sure the user can't still play
+            return;
+        }
         if (inputType === 'keydown') {
             if (inputData.keyCode === ROT.VK_RETURN) {
                 Game.switchScreen(Game.Screen.winScreen);
@@ -142,17 +141,18 @@ Game.Screen.playScreen = {
             // Unlock the engine
             this._map.getEngine().unlock();
         }
-    }
-    ,
+    },
     move: function (dX, dY, dZ) {
         let newX = this._player.getX() + dX;
         let newY = this._player.getY() + dY;
         let newZ = this._player.getZ() + dZ;
         // Try to move to the new cell
         this._player.tryMove(newX, newY, newZ, this._map);
+    },
+    setGameEnded: function (gameEnded) {
+        this._gameEnded = gameEnded;
     }
-}
-;
+};
 
 // Create winning screen
 Game.Screen.winScreen = {
