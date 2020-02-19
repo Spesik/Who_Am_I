@@ -105,6 +105,15 @@ Game.Entity.prototype.tryMove = function(x, y, z, map) {
         return false;
     } else if (tile.walkable()) {
         this.setPosition(x, y, z);
+        // Notify the entity that there are items at this position
+        let items = this.getMap().getItemsAt(x, y, z);
+        if (items) {
+            if (items.length === 1) {
+                Game.sendMessage(this, "You see %s.", [items[0].describeA()]);
+            } else {
+                Game.sendMessage(this, "There are several objects here.");
+            }
+        }
         return true;
     } else if (tile.diggable()) {
         if (this.hasMixin(Game.Mixins.PlayerActor)) {
