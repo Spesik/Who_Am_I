@@ -25,6 +25,7 @@ Game.Screen.startScreen = {
 Game.Screen.playScreen = {
     _map: null,
     _player: null,
+    _gameEnded: false,
     enter: function () {
         // Create a map based on parameters
         let width = 100;
@@ -77,8 +78,8 @@ Game.Screen.playScreen = {
         }
         // Render the Hero
         let entities = this._map.getEntities();
-        for (let i = 0; i < entities.length; i++) {
-            let entity = entities[i];
+        for (let key in entities) {
+            let entity = entities[key];
             if (entity.getX() >= topLeftX && entity.getY() >= topLeftY &&
                 entity.getX() < topLeftX + screenWidth &&
                 entity.getY() < topLeftY + screenHeight &&
@@ -108,6 +109,13 @@ Game.Screen.playScreen = {
         display.drawText(0, screenHeight, stats);
     },
     handleInput: function (inputType, inputData) {
+        if (this._gameEnded) {
+            if (inputType === 'keydown' && inputData.keyCode === ROT.VK_RETURN) {
+                Game.switchScreen(Game.Screen.loseScreen);
+            }
+            // Return to make sure the user can't still play
+            return;
+        }
         if (inputType === 'keydown') {
             if (inputData.keyCode === ROT.VK_RETURN) {
                 Game.switchScreen(Game.Screen.winScreen);
@@ -142,17 +150,18 @@ Game.Screen.playScreen = {
             // Unlock the engine
             this._map.getEngine().unlock();
         }
-    }
-    ,
+    },
     move: function (dX, dY, dZ) {
         let newX = this._player.getX() + dX;
         let newY = this._player.getY() + dY;
         let newZ = this._player.getZ() + dZ;
         // Try to move to the new cell
         this._player.tryMove(newX, newY, newZ, this._map);
+    },
+    setGameEnded: function (gameEnded) {
+        this._gameEnded = gameEnded;
     }
-}
-;
+};
 
 // Create winning screen
 Game.Screen.winScreen = {
