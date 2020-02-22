@@ -8,6 +8,8 @@ Game.Entity = function(properties) {
     this._z = properties['z'] || 0;
     this._map = null;
     this._alive = true;
+    // Acting speed
+    this._speed = properties['speed'] || 1000;
 };
 Game.Entity.extend(Game.DynamicGlyph);
 Game.Entity.prototype.setX = function(x) {
@@ -21,6 +23,9 @@ Game.Entity.prototype.setZ = function(z) {
 };
 Game.Entity.prototype.setMap = function(map) {
     this._map = map;
+};
+Game.Entity.prototype.setSpeed = function (speed) {
+    this._speed = speed;
 };
 Game.Entity.prototype.setPosition = function(x, y, z) {
     let oldX = this._x;
@@ -46,7 +51,9 @@ Game.Entity.prototype.getZ = function() {
 Game.Entity.prototype.getMap = function() {
     return this._map;
 };
-
+Game.Entity.prototype.getSpeed = function (speed) {
+    this._speed = speed;
+};
 Game.Entity.prototype.tryMove = function(x, y, z, map) {
     map = this.getMap();
     let tile = map.getTile(x, y, this.getZ());
