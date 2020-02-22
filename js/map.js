@@ -13,7 +13,16 @@ Game.Map = function (tiles, player) {
     this.addEntityAtRandomPosition(player, 0);
     for (let z = 0; z < this._depth; z++) {
         for (let i = 0; i < 15; i++) {
-            this.addEntityAtRandomPosition(Game.EntityRepository.createRandom(), z);
+            let entity = Game.EntityRepository.createRandom();
+            // Add a random entity
+            this.addEntityAtRandomPosition(entity, z);
+            // Level up the entity based on the floor
+            if (entity.hasMixin('ExperienceGainer')) {
+                for (let level = 0; level < z; level++) {
+                    entity.giveExperience(entity.getNextLevelExperience() -
+                        entity.getExperience());
+                }
+            }
         }
         for (let i = 0; i < 15; i++) {
             this.addItemAtRandomPosition(Game.ItemRepository.createRandom(), z);

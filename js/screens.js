@@ -99,9 +99,11 @@ Game.Screen.playScreen = {
                 0, messageY,
                 '%c{white}%b{black}' + messages[i])
         }
-        // Render player HP
+        // Render player stats
         let stats = '%c{white}%b{black}';
-        stats += vsprintf(' HP: %d/%d ', [this._player.getHp(), this._player.getMaxHp()]);
+        stats += vsprintf('HP: %d/%d L: %d XP: %d',
+            [this._player.getHp(), this._player.getMaxHp(),
+                this._player.getLevel(), this._player.getExperience()]);
         display.drawText(0, screenHeight, stats);
         // Render hunger state
         let hungerState = this._player.getHungerState();
@@ -427,10 +429,10 @@ Game.Screen.wieldScreen = new Game.Screen.ItemListScreen({
     canSelect: true,
     canSelectMultipleItems: false,
     hasNoItemOption: true,
-    isAcceptable: function(item) {
+    isAcceptable: function (item) {
         return item && item.hasMixin('Equippable') && item.isWieldable();
     },
-    ok: function(selectedItems) {
+    ok: function (selectedItems) {
         // Check if we selected 'no item'
         let keys = Object.keys(selectedItems);
         if (keys.length === 0) {
@@ -452,10 +454,10 @@ Game.Screen.wearScreen = new Game.Screen.ItemListScreen({
     canSelect: true,
     canSelectMultipleItems: false,
     hasNoItemOption: true,
-    isAcceptable: function(item) {
+    isAcceptable: function (item) {
         return item && item.hasMixin('Equippable') && item.isWearable();
     },
-    ok: function(selectedItems) {
+    ok: function (selectedItems) {
         // Check if we selected 'no item'
         let keys = Object.keys(selectedItems);
         if (keys.length === 0) {
@@ -471,3 +473,47 @@ Game.Screen.wearScreen = new Game.Screen.ItemListScreen({
         return true;
     }
 });
+
+Game.Screen.gainStatScreen = {
+    setup: function(entity) {
+        // Must be called before rendering.
+        this._entity = entity;
+        this._options = entity.getStatOptions();
+    },
+    render: function(display) {
+        let letters = 'abcdefghijklmnopqrstuvwxyz';
+        display.drawText(0, 0, 'Choose a stat to increase: ');
+
+        // Iterate through each of our options
+        for (let i = 0; i < this._options.length; i++) {
+            display.drawText(0, 2 + i,
+                letters.substring(i, i + 1) + ' - ' + this._options[i][0]);
+        }
+
+        // Render remaining stat points
+        display.drawText(0, 4 + this._options.length,
+            "Remaining points: " + this._entity.getStatPoints());
+    },
+    handleInput: function(inputType, inputData) {
+        if (inputType === 'keydown') {
+            // If a letter was pressed, check if it matches to a valid option.
+            if (inputData.keyCode >= ROT.VK_A && inputData.keyCode <= ROT.VK_Z) {
+                // Check if it maps to a valid item by subtracting 'a' from the character
+                // to know what letter of the alphabet we used.
+                let index = inputData.keyCode - ROT.VK_A;
+                if (this._options[index]) {
+                    // Call the stat increasing function
+                    this._options[index][1].call(this._entity);
+                    // Decrease stat points
+                    this._entity.setStatPoints(this._entity.getStatPoints() - 1);
+                    // If we have no stat points left, exit the screen, else refresh
+                    if (this._entity.getStatPoints() === 0) {
+                        Game.Screen.playScreen.setSubScreen(undefined);
+                    } else {
+                        Game.refresh();
+                    }
+                }
+            }
+        }
+    }
+};
