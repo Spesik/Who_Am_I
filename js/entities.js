@@ -5,11 +5,12 @@ Game.PlayerTemplate = {
     attackValue: 10,
     sightRadius: 10,
     inventorySlots: 24,
-    EntityMixins: [
+    mixins: [
         Game.EntityMixins.PlayerActor,
         Game.EntityMixins.Attacker,
         Game.EntityMixins.Destructible,
         Game.EntityMixins.InventoryHolder,
+        Game.EntityMixins.FoodConsumer,
         Game.EntityMixins.Sight,
         Game.EntityMixins.MessageRecipient
     ]
@@ -22,9 +23,10 @@ Game.EntityRepository.define('fungus', {
     character: 'F',
     foreground: 'green',
     maxHp: 10,
-    EntityMixins: [
+    mixins: [
         Game.EntityMixins.FungusActor,
-        Game.EntityMixins.Destructible
+        Game.EntityMixins.Destructible,
+        Game.EntityMixins.CorpseDropper
     ]
 });
 
@@ -34,8 +36,13 @@ Game.EntityRepository.define('bat', {
     foreground: 'magenta',
     maxHp: 5,
     attackValue: 4,
-    EntityMixins: [Game.EntityMixins.WanderActor,
-        Game.EntityMixins.Attacker, Game.EntityMixins.Destructible]
+    mixins: [
+        Game.EntityMixins.WanderActor,
+        Game.EntityMixins.CorpseDropper,
+        Game.EntityMixins.Attacker,
+        Game.EntityMixins.Destructible,
+        Game.EntityMixins.CorpseDropper
+    ]
 });
 
 Game.EntityRepository.define('snake', {
@@ -44,6 +51,10 @@ Game.EntityRepository.define('snake', {
     foreground: 'chartreuse',
     maxHp: 3,
     attackValue: 2,
-    EntityMixins: [Game.EntityMixins.WanderActor,
-        Game.EntityMixins.Attacker, Game.EntityMixins.Destructible]
+    mixins: [
+        Game.EntityMixins.WanderActor,
+        Game.EntityMixins.Attacker,
+        Game.EntityMixins.Destructible,
+        Game.EntityMixins.CorpseDropper
+    ]
 });

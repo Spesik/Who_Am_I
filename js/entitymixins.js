@@ -1,12 +1,17 @@
-// Create Mixins namespace
-Game.Mixins = {};
+// Create EntityMixins namespace
+Game.EntityMixins = {};
 
 // Main player's actor mixin
-Game.Mixins.PlayerActor = {
+Game.EntityMixins.PlayerActor = {
     name: 'PlayerActor',
     groupName: 'Actor',
     act: function () {
-        if (this.getHp() < 1) {
+        if (this._acting) {
+            return;
+        }
+        this._acting = true;
+        this.addTurnHunger();
+        if (!this.isAlive()) {
             Game.Screen.playScreen.setGameEnded(true);
             // Send a last message to the player
             Game.sendMessage(this, 'You have died... Press [Enter] to continue!');
@@ -15,10 +20,11 @@ Game.Mixins.PlayerActor = {
         Game.refresh();
         this.getMap().getEngine().lock();
         this.clearMessages();
+        this._acting = false;
     }
 };
 
-Game.Mixins.FungusActor = {
+Game.EntityMixins.FungusActor = {
     name: 'FungusActor',
     groupName: 'Actor',
     init: function () {
@@ -48,7 +54,7 @@ Game.Mixins.FungusActor = {
     }
 };
 
-Game.Mixins.WanderActor = {
+Game.EntityMixins.WanderActor = {
     name: 'WanderActor',
     groupName: 'Actor',
     act: function () {
@@ -61,9 +67,9 @@ Game.Mixins.WanderActor = {
     }
 };
 
-Game.Mixins.Attacker = {
-    name: "Attacker",
-    groupName: "Attacker",
+Game.EntityMixins.Attacker = {
+    name: 'Attacker',
+    groupName: 'Attacker',
     init: function (template) {
         this._attackValue = template['attackValue'] || 1;
     },
@@ -87,8 +93,8 @@ Game.Mixins.Attacker = {
 };
 
 // This mixin signifies an entity can take damage and be destroyed
-Game.Mixins.Destructible = {
-    name: "Destructible",
+Game.EntityMixins.Destructible = {
+    name: 'Destructible',
     init: function (template) {
         this._maxHp = template['maxHp'] || 10;
         this._hp = template['hp'] || this._maxHp;
@@ -108,16 +114,15 @@ Game.Mixins.Destructible = {
         // if hp <= 0,remove from the map
         if (this._hp <= 0) {
             Game.sendMessage(attacker, 'You kill the %s!', [this.getName()]);
-            if (this.hasMixin(Game.Mixins.PlayerActor)) {
-                this.act();
-            } else {
-                this.getMap().removeEntity(this);
+            if (this.hasMixin(Game.EntityMixins.CorpseDroper)) {
+                this.tryDropCorpse();
             }
+            this.kill();
         }
     }
 };
 
-Game.Mixins.MessageRecipient = {
+Game.EntityMixins.MessageRecipient = {
     name: 'MessageRecipient',
     init: function (template) {
         this._messages = [];
@@ -133,7 +138,7 @@ Game.Mixins.MessageRecipient = {
     }
 };
 
-Game.Mixins.Sight = {
+Game.EntityMixins.Sight = {
     name: 'Sight',
     groupName: 'Sight',
     init: function (template) {
@@ -145,7 +150,7 @@ Game.Mixins.Sight = {
 };
 
 Game.sendMessage = function (recipient, message, args) {
-    if (recipient.hasMixin(Game.Mixins.MessageRecipient)) {
+    if (recipient.hasMixin(Game.EntityMixins.MessageRecipient)) {
         if (args) {
             message = vsprintf(message, args);
         }
@@ -159,13 +164,13 @@ Game.sendMessageNearby = function (map, centerX, centerY, centerZ, message, args
     }
     let entities = map.getEntitiesWithinRadius(centerX, centerY, centerZ, 5);
     for (let i = 0; i < entities.length; i++) {
-        if (entities[i].hasMixin(Game.Mixins.MessageRecipient)) {
+        if (entities[i].hasMixin(Game.EntityMixins.MessageRecipient)) {
             entities[i].receiveMessage(message);
         }
     }
 };
 
-Game.Mixins.InventoryHolder = {
+Game.EntityMixins.InventoryHolder = {
     name: 'InventoryHolder',
     init: function(template) {
         // Default to 10 inventory slots.
@@ -232,6 +237,60 @@ Game.Mixins.InventoryHolder = {
                 this._map.addItem(this.getX(), this.getY(), this.getZ(), this._items[i]);
             }
             this.removeItem(i);
+        }
+    }
+};
+Game.EntityMixins.FoodConsumer = {
+    name: 'FoodConsumer',
+    init: function(template) {
+        this._maxFullness = template['maxFullness'] || 1000;
+        // Start halfway to max fullness if no default value
+        this._fullness = template['fullness'] || (this._maxFullness / 2);
+        // Number of points to decrease fullness by every turn.
+        this._fullnessDepletionRate = template['fullnessDepletionRate'] || 1;
+    },
+    addTurnHunger: function() {
+        // Remove the standard depletion points
+        this.modifyFullnessBy(-this._fullnessDepletionRate);
+    },
+    modifyFullnessBy: function(points) {
+        this._fullness = this._fullness + points;
+        if (this._fullness <= 0) {
+            this.kill('You have died of starvation!');
+        } else if (this._fullness > this._maxFullness) {
+            this.kill('You choke and die!');
+        }
+    },
+    getHungerState: function() {
+        let perPercent = this._maxFullness / 100;
+        if (this._fullness <= perPercent * 5) {
+            return 'Starvation';
+        } else if (this._fullness <= perPercent * 25) {
+            return 'Hungry';
+        } else if (this._fullness >= perPercent * 75) {
+            return 'Full';
+        } else if (this._fullness >= perPercent * 95) {
+            return 'Overeat';
+        } else {
+            return 'Not Hungry';
+        }
+    }
+};
+
+Game.EntityMixins.CorpseDropper = {
+    name: 'CorpseDropper',
+    init: function(template) {
+        // Chance to drop a corpse
+        this._corpseDropRate = template['corpseDropRate'] || 100;
+    },
+    tryDropCorpse: function() {
+        if (Math.round(Math.random() * 100) < this._corpseDropRate) {
+            // Create a new corpse item and drop it.
+            this._map.addItem(this.getX(), this.getY(), this.getZ(),
+                Game.ItemRepository.create('corpse', {
+                    name: this._name + ' corpse',
+                    foreground: this._foreground
+                }));
         }
     }
 };

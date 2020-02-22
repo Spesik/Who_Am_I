@@ -1,42 +1,15 @@
 Game.Entity = function(properties) {
     properties = properties || {};
-    // Call the glyph's constructor
-    Game.Glyph.call(this, properties);
+    // Call the dynamic glyph's constructor
+    Game.DynamicGlyph.call(this, properties);
     this._name = properties['name'] || '';
     this._x = properties['x'] || 0;
     this._y = properties['y'] || 0;
     this._z = properties['z'] || 0;
     this._map = null;
-    this._attachedMixins = {};
-    this._attachedMixinsGroups = {};
-    let mixins = properties['mixins'] || [];
-    for (let i = 0; i < mixins.length; i++) {
-        for (let key in mixins[i]) {
-            if (key !== 'init' && key !== 'name' && !this.hasOwnProperty(key)) {
-                this[key] = mixins[i][key];
-            }
-        }
-        this._attachedMixins[mixins[i].name] = true;
-        if (mixins[i].groupName) {
-            this._attachedMixinsGroups[mixins[i].groupName] = true;
-        }
-        if (mixins[i].init) {
-            mixins[i].init.call(this, properties);
-        }
-    }
+    this._alive = true;
 };
-Game.Entity.extend(Game.Glyph);
-Game.Entity.prototype.hasMixin = function(obj) {
-    // Allow passing the mixin itself or the name / group name as a string
-    if (typeof obj === 'object') {
-        return this._attachedMixins[obj.name];
-    } else {
-        return this._attachedMixins[obj] || this._attachedMixinsGroups[obj];
-    }
-};
-Game.Entity.prototype.setName = function(name) {
-    this._name = name;
-};
+Game.Entity.extend(Game.DynamicGlyph);
 Game.Entity.prototype.setX = function(x) {
     this._x = x;
 };
@@ -60,9 +33,6 @@ Game.Entity.prototype.setPosition = function(x, y, z) {
     if (this._map) {
         this._map.updateEntityPosition(this, oldX, oldY, oldZ);
     }
-};
-Game.Entity.prototype.getName = function() {
-    return this._name;
 };
 Game.Entity.prototype.getX = function() {
     return this._x;
@@ -123,4 +93,26 @@ Game.Entity.prototype.tryMove = function(x, y, z, map) {
         return false;
     }
     return false;
+};
+Game.Entity.prototype.isAlive = function() {
+    return this._alive;
+};
+Game.Entity.prototype.kill = function(message) {
+    // Only kill once!
+    if (!this._alive) {
+        return;
+    }
+    this._alive = false;
+    if (message) {
+        Game.sendMessage(this, message);
+    } else {
+        Game.sendMessage(this, "You have died!");
+    }
+
+    // Check if the hero died, and if so call their act method to prompt the user.
+    if (this.hasMixin(Game.EntityMixins.PlayerActor)) {
+        this.act();
+    } else {
+        this.getMap().removeEntity(this);
+    }
 };
