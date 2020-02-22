@@ -18,6 +18,13 @@ Game.Map = function (tiles, player) {
             this.addItemAtRandomPosition(Game.ItemRepository.createRandom(), z);
         }
     }
+// Add weapons and armor to the map in random positions and floors
+    let templates = ['dagger', 'sword', 'staff',
+        'tunic', 'chainmail', 'platemail'];
+    for (let i = 0; i < templates.length; i++) {
+        this.addItemAtRandomPosition(Game.ItemRepository.create(templates[i]),
+            Math.floor(this._depth * Math.random()));
+    }
     this._explored = new Array(this._depth);
     this._setupExploredArray();
 };
@@ -157,7 +164,7 @@ Game.Map.prototype.addEntityAtRandomPosition = function (entity, z) {
     this.addEntity(entity);
 };
 
-Game.Map.prototype.addEntity = function(entity) {
+Game.Map.prototype.addEntity = function (entity) {
     // Update the entity's map
     entity.setMap(this);
     // Update the map with the entity's position
@@ -171,7 +178,8 @@ Game.Map.prototype.addEntity = function(entity) {
 
 Game.Map.prototype.removeEntity = function (entity) {
     // find the entity in the list of entities if it is present
-    let key = entity.getX() + ',' + entity.getY() + ',' + entity.getZ(); {
+    let key = entity.getX() + ',' + entity.getY() + ',' + entity.getZ();
+    {
         if (this._entities[key] === entity) {
             delete this._entities[key];
         }
@@ -183,8 +191,8 @@ Game.Map.prototype.removeEntity = function (entity) {
     }
 };
 
-Game.Map.prototype.updateEntityPosition = function(entity, oldX, oldY, oldZ) {
-    if (oldX) {
+Game.Map.prototype.updateEntityPosition = function (entity, oldX, oldY, oldZ) {
+    if (typeof oldX === 'number') {
         let oldKey = oldX + ',' + oldY + ',' + oldZ;
         if (this._entities[oldKey] === entity) {
             delete this._entities[oldKey];
@@ -202,11 +210,11 @@ Game.Map.prototype.updateEntityPosition = function(entity, oldX, oldY, oldZ) {
     this._entities[key] = entity;
 };
 
-Game.Map.prototype.getItemsAt = function(x, y, z) {
+Game.Map.prototype.getItemsAt = function (x, y, z) {
     return this._items[x + ',' + y + ',' + z];
 };
 
-Game.Map.prototype.setItemsAt = function(x, y, z, items) {
+Game.Map.prototype.setItemsAt = function (x, y, z, items) {
     let key = x + ',' + y + ',' + z;
     if (items.length === 0) {
         if (this._items[key]) {
@@ -218,7 +226,7 @@ Game.Map.prototype.setItemsAt = function(x, y, z, items) {
     }
 };
 
-Game.Map.prototype.addItem = function(x, y, z, item) {
+Game.Map.prototype.addItem = function (x, y, z, item) {
     let key = x + ',' + y + ',' + z;
     if (this._items[key]) {
         this._items[key].push(item);
@@ -227,7 +235,7 @@ Game.Map.prototype.addItem = function(x, y, z, item) {
     }
 };
 
-Game.Map.prototype.addItemAtRandomPosition = function(item, z) {
+Game.Map.prototype.addItemAtRandomPosition = function (item, z) {
     let position = this.getRandomFloorPosition(z);
     this.addItem(position.x, position.y, position.z, item);
 };
