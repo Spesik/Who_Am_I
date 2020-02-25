@@ -57,11 +57,11 @@ Game.EntityMixins.FungusActor = {
 Game.EntityMixins.TaskActor = {
     name: 'TaskActor',
     groupName: 'Actor',
-    init: function(template) {
+    init: function (template) {
         // Load tasks
         this._tasks = template['tasks'] || ['wander'];
     },
-    act: function() {
+    act: function () {
         // Iterate through all our tasks
         for (let i = 0; i < this._tasks.length; i++) {
             if (this.canDoTask(this._tasks[i])) {
@@ -71,7 +71,7 @@ Game.EntityMixins.TaskActor = {
             }
         }
     },
-    canDoTask: function(task) {
+    canDoTask: function (task) {
         if (task === 'hunt') {
             return this.hasMixin('Sight') && this.canSee(this.getMap().getPlayer());
         } else if (task === 'wander') {
@@ -80,7 +80,7 @@ Game.EntityMixins.TaskActor = {
             throw new Error('Tried to perform undefined task ' + task);
         }
     },
-    hunt: function() {
+    hunt: function () {
         let player = this.getMap().getPlayer();
 
         // If we are adjacent to the player, then attack instead of hunting.
@@ -96,7 +96,7 @@ Game.EntityMixins.TaskActor = {
         // Generate the path and move to the first tile.
         let source = this;
         let z = source.getZ();
-        let path = new ROT.Path.AStar(player.getX(), player.getY(), function(x, y) {
+        let path = new ROT.Path.AStar(player.getX(), player.getY(), function (x, y) {
             // If an entity is present at the tile, can't move there.
             let entity = source.getMap().getEntityAt(x, y, z);
             if (entity && entity !== player && entity !== source) {
@@ -105,14 +105,14 @@ Game.EntityMixins.TaskActor = {
             return source.getMap().getTile(x, y, z).isWalkable();
         }, {topology: 4});
         let count = 0;
-        path.compute(source.getX(), source.getY(), function(x, y) {
+        path.compute(source.getX(), source.getY(), function (x, y) {
             if (count === 1) {
                 source.tryMove(x, y, z);
             }
             count++;
         });
     },
-    wander: function() {
+    wander: function () {
         let moveOffset = (Math.round(Math.random()) === 1) ? 1 : -1;
         if (Math.round(Math.random()) === 1) {
             this.tryMove(this.getX() + moveOffset, this.getY(), this.getZ());
@@ -121,6 +121,57 @@ Game.EntityMixins.TaskActor = {
         }
     }
 };
+
+Game.EntityMixins.GiantZombieActor = Game.extend(Game.EntityMixins.TaskActor, {
+    init: function (template) {
+        // Call the task actor init with the right tasks.
+        Game.EntityMixins.TaskActor.init.call(this, Game.extend(template, {
+            'tasks': ['growArm', 'spawnSlime', 'hunt', 'wander']
+        }));
+        this._hasGrownArm = false;
+    },
+    canDoTask: function (task) {
+        // If we haven't already grown arm and HP <= 20, then we can grow.
+        if (task === 'growArm') {
+            return this.getHp() <= 20 && !this._hasGrownArm;
+            // Spawn a slime only a 10% of turns.
+        } else if (task === 'spawnSlime') {
+            return Math.round(Math.random() * 100) <= 10;
+            // Call parent canDoTask
+        } else {
+            return Game.EntityMixins.TaskActor.canDoTask.call(this, task);
+        }
+    },
+    growArm: function () {
+        this._hasGrownArm = true;
+        this.increaseAttackValue(5);
+        // Send a message saying the zombie grew an arm.
+        Game.sendMessageNearby(this.getMap(),
+            this.getX(), this.getY(), this.getZ(),
+            'An extra arm appears on the giant zombie!');
+    },
+    spawnSlime: function () {
+        // Generate a random position nearby.
+        let xOffset = Math.floor(Math.random() * 3) - 1;
+        let yOffset = Math.floor(Math.random() * 3) - 1;
+        if (!this.getMap().isEmptyFloor(this.getX() + xOffset, this.getY() + yOffset,
+            this.getZ())) {
+            return;
+        }
+        // Create the entity
+        let slime = Game.EntityRepository.create('slime');
+        slime.setX(this.getX() + xOffset);
+        slime.setY(this.getY() + yOffset);
+        slime.setZ(this.getZ());
+        this.getMap().addEntity(slime);
+    },
+    listeners: {
+        onDeath: function (attacker) {
+            // Switch to win screen when killed!
+            Game.switchScreen(Game.Screen.winScreen);
+        }
+    }
+});
 
 Game.EntityMixins.Attacker = {
     name: 'Attacker',
@@ -187,16 +238,16 @@ Game.EntityMixins.Destructible = {
     getMaxHp: function () {
         return this._maxHp;
     },
-    setHp: function(hp) {
+    setHp: function (hp) {
         this._hp = hp;
     },
-    increaseDefenseValue: function(value) {
+    increaseDefenseValue: function (value) {
         value = value || 2;
         // Add to the defense value.
         this._defenseValue += 2;
         Game.sendMessage(this, "You look tougher!");
     },
-    increaseMaxHp: function(value) {
+    increaseMaxHp: function (value) {
         value = value || 10;
         // Add to both max HP and HP.
         this._maxHp += 10;
@@ -208,24 +259,15 @@ Game.EntityMixins.Destructible = {
         // if hp <= 0,remove from the map
         if (this._hp <= 0) {
             Game.sendMessage(attacker, 'You kill the %s!', [this.getName()]);
-            if (this.hasMixin(Game.EntityMixins.CorpseDropper)) {
-                this.tryDropCorpse();
-            }
+            this.raiseEvent('onDeath', attacker);
+            attacker.raiseEvent('onKill', this);
             this.kill();
-            if (attacker.hasMixin('ExperienceGainer')) {
-                let exp = this.getMaxHp() + this.getDefenseValue();
-                if (this.hasMixin('Attacker')) {
-                    exp += this.getAttackValue();
-                }
-                // Account for level differences
-                if (this.hasMixin('ExperienceGainer')) {
-                    exp -= (attacker.getLevel() - this.getLevel()) * 3;
-                }
-                // Only give experience if more than 0.
-                if (exp > 0) {
-                    attacker.giveExperience(exp);
-                }
-            }
+        }
+    },
+    listeners: {
+        onGainLevel: function () {
+            // Heal the entity.
+            this.setHp(this.getMaxHp());
         }
     }
 };
@@ -255,13 +297,13 @@ Game.EntityMixins.Sight = {
     getSightRadius: function () {
         return this._sightRadius;
     },
-    increaseSightRadius: function(value) {
+    increaseSightRadius: function (value) {
         value = value || 1;
         // Add to sight radius.
         this._sightRadius += 1;
         Game.sendMessage(this, "You are more aware of your surroundings!");
     },
-    canSee: function(entity) {
+    canSee: function (entity) {
         // If not on the same map or on different floors, then exit early
         if (!entity || this._map !== entity.getMap() || this._z !== entity.getZ()) {
             return false;
@@ -283,7 +325,7 @@ Game.EntityMixins.Sight = {
         this.getMap().getFov(this.getZ()).compute(
             this.getX(), this.getY(),
             this.getSightRadius(),
-            function(x, y, radius, visibility) {
+            function (x, y, radius, visibility) {
                 if (x === otherX && y === otherY) {
                     found = true;
                 }
@@ -315,19 +357,19 @@ Game.sendMessageNearby = function (map, centerX, centerY, centerZ, message, args
 
 Game.EntityMixins.InventoryHolder = {
     name: 'InventoryHolder',
-    init: function(template) {
+    init: function (template) {
         // Default to 10 inventory slots.
         let inventorySlots = template['inventorySlots'] || 10;
         // Set up an empty inventory.
         this._items = new Array(inventorySlots);
     },
-    getItems: function() {
+    getItems: function () {
         return this._items;
     },
-    getItem: function(i) {
+    getItem: function (i) {
         return this._items[i];
     },
-    addItem: function(item) {
+    addItem: function (item) {
         // Try to find a slot, returning true only if we could add the item.
         for (let i = 0; i < this._items.length; i++) {
             if (!this._items[i]) {
@@ -337,14 +379,14 @@ Game.EntityMixins.InventoryHolder = {
         }
         return false;
     },
-    removeItem: function(i) {
+    removeItem: function (i) {
         if (this._items[i] && this.hasMixin(Game.EntityMixins.Equipper)) {
             this.unequip(this._items[i]);
         }
         // Simply clear the inventory slot.
         this._items[i] = null;
     },
-    canAddItem: function() {
+    canAddItem: function () {
         // Check if we have an empty slot.
         for (let i = 0; i < this._items.length; i++) {
             if (!this._items[i]) {
@@ -353,7 +395,7 @@ Game.EntityMixins.InventoryHolder = {
         }
         return false;
     },
-    pickupItems: function(indices) {
+    pickupItems: function (indices) {
         // Allows the user to pick up items from the map, where indices is
         // the indices for the array returned by map.getItemsAt
         let mapItems = this._map.getItemsAt(this.getX(), this.getY(), this.getZ());
@@ -363,7 +405,7 @@ Game.EntityMixins.InventoryHolder = {
             // Try to add the item. If our inventory is not full, then splice the
             // item out of the list of items. In order to fetch the right item, we
             // have to offset the number of items already added.
-            if (this.addItem(mapItems[indices[i]  - added])) {
+            if (this.addItem(mapItems[indices[i] - added])) {
                 mapItems.splice(indices[i] - added, 1);
                 added++;
             } else {
@@ -376,7 +418,7 @@ Game.EntityMixins.InventoryHolder = {
         // Return true only if we added all items
         return added === indices.length;
     },
-    dropItem: function(i) {
+    dropItem: function (i) {
         // Drops an item to the current map tile
         if (this._items[i]) {
             if (this._map) {
@@ -388,18 +430,18 @@ Game.EntityMixins.InventoryHolder = {
 };
 Game.EntityMixins.FoodConsumer = {
     name: 'FoodConsumer',
-    init: function(template) {
+    init: function (template) {
         this._maxFullness = template['maxFullness'] || 1000;
         // Start halfway to max fullness if no default value
         this._fullness = template['fullness'] || (this._maxFullness / 2);
         // Number of points to decrease fullness by every turn.
         this._fullnessDepletionRate = template['fullnessDepletionRate'] || 1;
     },
-    addTurnHunger: function() {
+    addTurnHunger: function () {
         // Remove the standard depletion points
         this.modifyFullnessBy(-this._fullnessDepletionRate);
     },
-    modifyFullnessBy: function(points) {
+    modifyFullnessBy: function (points) {
         this._fullness = this._fullness + points;
         if (this._fullness <= 0) {
             this.kill('You have died of starvation!');
@@ -407,7 +449,7 @@ Game.EntityMixins.FoodConsumer = {
             this.kill('You choke and die!');
         }
     },
-    getHungerState: function() {
+    getHungerState: function () {
         let perPercent = this._maxFullness / 100;
         if (this._fullness <= perPercent * 5) {
             return 'Starvation';
@@ -425,47 +467,50 @@ Game.EntityMixins.FoodConsumer = {
 
 Game.EntityMixins.CorpseDropper = {
     name: 'CorpseDropper',
-    init: function(template) {
+    init: function (template) {
         // Chance to drop a corpse
         this._corpseDropRate = template['corpseDropRate'] || 100;
     },
-    tryDropCorpse: function() {
-        if (Math.round(Math.random() * 100) < this._corpseDropRate) {
-            // Create a new corpse item and drop it.
-            this._map.addItem(this.getX(), this.getY(), this.getZ(),
-                Game.ItemRepository.create('corpse', {
-                    name: this._name + ' corpse',
-                    foreground: this._foreground
-                }));
+    listeners: {
+        onDeath: function (attacker) {
+            // Check if we should drop a corpse.
+            if (Math.round(Math.random() * 100) <= this._corpseDropRate) {
+                // Create a new corpse item and drop it.
+                this._map.addItem(this.getX(), this.getY(), this.getZ(),
+                    Game.ItemRepository.create('corpse', {
+                        name: this._name + ' corpse',
+                        foreground: this._foreground
+                    }));
+            }
         }
     }
 };
 
 Game.EntityMixins.Equipper = {
     name: 'Equipper',
-    init: function(template) {
+    init: function (template) {
         this._weapon = null;
         this._armor = null;
     },
-    wield: function(item) {
+    wield: function (item) {
         this._weapon = item;
     },
-    unwield: function() {
+    unwield: function () {
         this._weapon = null;
     },
-    wear: function(item) {
+    wear: function (item) {
         this._armor = item;
     },
-    takeOff: function() {
+    takeOff: function () {
         this._armor = null;
     },
-    getWeapon: function() {
+    getWeapon: function () {
         return this._weapon;
     },
-    getArmor: function() {
+    getArmor: function () {
         return this._armor;
     },
-    unequip: function(item) {
+    unequip: function (item) {
         // Helper function to be called before getting rid of an item.
         if (this._weapon === item) {
             this.unwield();
@@ -478,7 +523,7 @@ Game.EntityMixins.Equipper = {
 
 Game.EntityMixins.ExperienceGainer = {
     name: 'ExperienceGainer',
-    init: function(template) {
+    init: function (template) {
         this._level = template['level'] || 1;
         this._experience = template['experience'] || 0;
         this._statPointsPerLevel = template['statPointsPerLevel'] || 1;
@@ -496,25 +541,25 @@ Game.EntityMixins.ExperienceGainer = {
             this._statOptions.push(['Increase sight range', this.increaseSightRadius]);
         }
     },
-    getLevel: function() {
+    getLevel: function () {
         return this._level;
     },
-    getExperience: function() {
+    getExperience: function () {
         return this._experience;
     },
-    getNextLevelExperience: function() {
+    getNextLevelExperience: function () {
         return (this._level * this._level) * 10;
     },
-    getStatPoints: function() {
+    getStatPoints: function () {
         return this._statPoints;
     },
-    setStatPoints: function(statPoints) {
+    setStatPoints: function (statPoints) {
         this._statPoints = statPoints;
     },
-    getStatOptions: function() {
+    getStatOptions: function () {
         return this._statOptions;
     },
-    giveExperience: function(points) {
+    giveExperience: function (points) {
         let statPointsGained = 0;
         let levelsGained = 0;
         // Loop until we've allocated all points.
@@ -539,12 +584,22 @@ Game.EntityMixins.ExperienceGainer = {
         // Check if we gained at least one level.
         if (levelsGained > 0) {
             Game.sendMessage(this, "You advance to level %d.", [this._level]);
-            // Heal the entity if possible.
-            if (this.hasMixin('Destructible')) {
-                this.setHp(this.getMaxHp());
+            this.raiseEvent('onGainLevel');
+        }
+    },
+    listeners: {
+        onKill: function (victim) {
+            let exp = victim.getMaxHp() + victim.getDefenseValue();
+            if (victim.hasMixin('Attacker')) {
+                exp += victim.getAttackValue();
             }
-            if (this.hasMixin('StatGainer')) {
-                this.onGainLevel();
+            // Account for level differences
+            if (victim.hasMixin('ExperienceGainer')) {
+                exp -= (this.getLevel() - victim.getLevel()) * 3;
+            }
+            // Only give experience if more than 0.
+            if (exp > 0) {
+                this.giveExperience(exp);
             }
         }
     }
@@ -553,14 +608,16 @@ Game.EntityMixins.ExperienceGainer = {
 Game.EntityMixins.RandomStatGainer = {
     name: 'RandomStatGainer',
     groupName: 'StatGainer',
-    onGainLevel: function() {
-        let statOptions = this.getStatOptions();
-        // Randomly select a stat option and execute the callback for each
-        // stat point.
-        while (this.getStatPoints() > 0) {
-            // Call the stat increasing function with this as the context.
-            statOptions.random()[1].call(this);
-            this.setStatPoints(this.getStatPoints() - 1);
+    listeners: {
+        onGainLevel: function () {
+            let statOptions = this.getStatOptions();
+            // Randomly select a stat option and execute the callback for each
+            // stat point.
+            while (this.getStatPoints() > 0) {
+                // Call the stat increasing function with this as the context.
+                statOptions.random()[1].call(this);
+                this.setStatPoints(this.getStatPoints() - 1);
+            }
         }
     }
 };
@@ -568,9 +625,11 @@ Game.EntityMixins.RandomStatGainer = {
 Game.EntityMixins.PlayerStatGainer = {
     name: 'PlayerStatGainer',
     groupName: 'StatGainer',
-    onGainLevel: function() {
-        // Setup the gain stat screen and show it.
-        Game.Screen.gainStatScreen.setup(this);
-        Game.Screen.playScreen.setSubScreen(Game.Screen.gainStatScreen);
+    listeners: {
+        onGainLevel: function () {
+            // Setup the gain stat screen and show it.
+            Game.Screen.gainStatScreen.setup(this);
+            Game.Screen.playScreen.setSubScreen(Game.Screen.gainStatScreen);
+        }
     }
 };

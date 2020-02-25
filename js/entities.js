@@ -27,6 +27,7 @@ Game.EntityRepository.define('fungus', {
     foreground: 'green',
     maxHp: 10,
     speed: 250,
+    tasks: ['wander'],
     mixins: [
         Game.EntityMixins.FungusActor,
         Game.EntityMixins.Destructible,
@@ -43,6 +44,7 @@ Game.EntityRepository.define('bat', {
     maxHp: 5,
     speed: 2000,
     attackValue: 4,
+    tasks: ['wander'],
     mixins: [
         Game.EntityMixins.TaskActor,
         Game.EntityMixins.Attacker,
@@ -59,8 +61,28 @@ Game.EntityRepository.define('snake', {
     foreground: 'chartreuse',
     maxHp: 3,
     attackValue: 2,
+    tasks: ['wander'],
     mixins: [
         Game.EntityMixins.TaskActor,
+        Game.EntityMixins.Attacker,
+        Game.EntityMixins.Destructible,
+        Game.EntityMixins.CorpseDropper,
+        Game.EntityMixins.ExperienceGainer,
+        Game.EntityMixins.RandomStatGainer
+    ]
+});
+
+Game.EntityRepository.define('boomrat', {
+    name: 'boomrat',
+    character: 'b',
+    foreground: 'pink',
+    maxHp: 1,
+    attackValue: 20,
+    sightRadius: 4,
+    tasks: ['wander'],
+    mixins: [
+        Game.EntityMixins.TaskActor,
+        Game.EntityMixins.Sight,
         Game.EntityMixins.Attacker,
         Game.EntityMixins.Destructible,
         Game.EntityMixins.CorpseDropper,
@@ -77,7 +99,8 @@ Game.EntityRepository.define('kobold', {
     attackValue: 4,
     sightRadius: 5,
     tasks: ['hunt', 'wander'],
-    mixins: [Game.EntityMixins.TaskActor,
+    mixins: [
+        Game.EntityMixins.TaskActor,
         Game.EntityMixins.Sight,
         Game.EntityMixins.Attacker,
         Game.EntityMixins.Destructible,
@@ -85,4 +108,44 @@ Game.EntityRepository.define('kobold', {
         Game.EntityMixins.ExperienceGainer,
         Game.EntityMixins.RandomStatGainer
     ]
+});
+
+Game.EntityRepository.define('goblin', {
+    name: 'goblin',
+    character: 'g',
+    foreground: 'brown',
+    maxHp: 10,
+    attackValue: 5,
+    sightRadius: 3,
+    tasks: ['hunt', 'wander'],
+    mixins: [
+        Game.EntityMixins.TaskActor,
+        Game.EntityMixins.Sight,
+        Game.EntityMixins.Attacker,
+        Game.EntityMixins.Destructible,
+        Game.EntityMixins.CorpseDropper,
+        Game.EntityMixins.ExperienceGainer,
+        Game.EntityMixins.RandomStatGainer
+    ]
+});
+
+// Final BOSS
+Game.EntityRepository.define('giant zombie', {
+    name: 'giant zombie',
+    character: 'Z',
+    foreground: 'teal',
+    maxHp: 30,
+    attackValue: 8,
+    defenseValue: 5,
+    level: 5,
+    sightRadius: 6,
+    mixins: [
+        Game.EntityMixins.GiantZombieActor,
+        Game.EntityMixins.Sight,
+        Game.EntityMixins.Attacker,
+        Game.EntityMixins.Destructible,
+        Game.EntityMixins.CorpseDropper,
+        Game.EntityMixins.ExperienceGainer
+    ]}, {
+    disableRandomCreation: true
 });

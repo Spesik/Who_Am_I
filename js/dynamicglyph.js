@@ -4,16 +4,34 @@ Game.DynamicGlyph = function(properties) {
     this._name = properties['name'] || '';
     this._attachedMixins = {};
     this._attachedMixinGroups = {};
+    this._listeners = {};
     let mixins = properties['mixins'] || [];
     for (let i = 0; i < mixins.length; i++) {
         for (let key in mixins[i]) {
-            if (key != 'init' && key != 'name' && !this.hasOwnProperty(key)) {
+            if (
+                key !== 'init' &&
+                key !== 'name' &&
+                key !== 'listeners' &&
+                !this.hasOwnProperty(key)
+            ) {
                 this[key] = mixins[i][key];
             }
         }
         this._attachedMixins[mixins[i].name] = true;
         if (mixins[i].groupName) {
             this._attachedMixinGroups[mixins[i].groupName] = true;
+        }
+        // Add all of our listeners
+        if (mixins[i].listeners) {
+            for (let key in mixins[i].listeners) {
+                // If we don't already have a key for this event in our listeners
+                // array, add it.
+                if (!this._listeners[key]) {
+                    this._listeners[key] = [];
+                }
+                // Add the listener.
+                this._listeners[key].push(mixins[i].listeners[key]);
+            }
         }
         if (mixins[i].init) {
             mixins[i].init.call(this, properties);
@@ -52,4 +70,16 @@ Game.DynamicGlyph.prototype.describeA = function(capitalize) {
 Game.DynamicGlyph.prototype.describeThe = function(capitalize) {
     let prefix = capitalize ? 'The' : 'the';
     return prefix + ' ' + this.describe();
+};
+Game.DynamicGlyph.prototype.raiseEvent = function(event) {
+    // Make sure we have at least one listener, or else exit
+    if (!this._listeners[event]) {
+        return;
+    }
+    // Extract any arguments passed, removing the event name
+    let args = Array.prototype.slice.call(arguments, 1);
+    // Invoke each listener, with this entity as the context and the arguments
+    for (let i = 0; i < this._listeners[event].length; i++) {
+        this._listeners[event][i].apply(this, args);
+    }
 };
