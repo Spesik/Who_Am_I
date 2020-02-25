@@ -126,7 +126,7 @@ Game.EntityMixins.GiantZombieActor = Game.extend(Game.EntityMixins.TaskActor, {
     init: function (template) {
         // Call the task actor init with the right tasks.
         Game.EntityMixins.TaskActor.init.call(this, Game.extend(template, {
-            'tasks': ['growArm', 'spawnSlime', 'hunt', 'wander']
+            'tasks': ['growArm', 'spawnSkeletons', 'hunt', 'wander']
         }));
         this._hasGrownArm = false;
     },
@@ -134,8 +134,8 @@ Game.EntityMixins.GiantZombieActor = Game.extend(Game.EntityMixins.TaskActor, {
         // If we haven't already grown arm and HP <= 20, then we can grow.
         if (task === 'growArm') {
             return this.getHp() <= 20 && !this._hasGrownArm;
-            // Spawn a slime only a 10% of turns.
-        } else if (task === 'spawnSlime') {
+            // Spawn a skeleton only a 10% of turns.
+        } else if (task === 'spawnSkeletons') {
             return Math.round(Math.random() * 100) <= 10;
             // Call parent canDoTask
         } else {
@@ -150,7 +150,7 @@ Game.EntityMixins.GiantZombieActor = Game.extend(Game.EntityMixins.TaskActor, {
             this.getX(), this.getY(), this.getZ(),
             'An extra arm appears on the giant zombie!');
     },
-    spawnSlime: function () {
+    spawnSkeletons: function () {
         // Generate a random position nearby.
         let xOffset = Math.floor(Math.random() * 3) - 1;
         let yOffset = Math.floor(Math.random() * 3) - 1;
@@ -159,11 +159,11 @@ Game.EntityMixins.GiantZombieActor = Game.extend(Game.EntityMixins.TaskActor, {
             return;
         }
         // Create the entity
-        let slime = Game.EntityRepository.create('slime');
-        slime.setX(this.getX() + xOffset);
-        slime.setY(this.getY() + yOffset);
-        slime.setZ(this.getZ());
-        this.getMap().addEntity(slime);
+        let skeleton = Game.EntityRepository.create('skeleton');
+        skeleton.setX(this.getX() + xOffset);
+        skeleton.setY(this.getY() + yOffset);
+        skeleton.setZ(this.getZ());
+        this.getMap().addEntity(skeleton);
     },
     listeners: {
         onDeath: function (attacker) {

@@ -129,6 +129,20 @@ Game.EntityRepository.define('goblin', {
     ]
 });
 
+Game.EntityRepository.define('skeleton', {
+    name: 'skeleton',
+    character: 's',
+    foreground: 'gray',
+    maxHp: 10,
+    attackValue: 5,
+    sightRadius: 3,
+    tasks: ['hunt', 'wander'],
+    mixins: [Game.EntityMixins.TaskActor, Game.EntityMixins.Sight,
+        Game.EntityMixins.Attacker, Game.EntityMixins.Destructible,
+        Game.EntityMixins.CorpseDropper,
+        Game.EntityMixins.ExperienceGainer, Game.EntityMixins.RandomStatGainer]
+});
+
 // Final BOSS
 Game.EntityRepository.define('giant zombie', {
     name: 'giant zombie',

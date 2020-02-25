@@ -23,7 +23,6 @@ Game.Screen.startScreen = {
 
 // Create playing screen
 Game.Screen.playScreen = {
-    _map: null,
     _player: null,
     _gameEnded: false,
     _subScreen: null,
