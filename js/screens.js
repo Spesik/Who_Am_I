@@ -112,7 +112,7 @@ Game.Screen.playScreen = {
         display.drawText(0, screenHeight, stats);
         // Render hunger state
         let hungerState = this._player.getHungerState();
-        display.drawText(screenWidth - hungerState.length, screenHeight, hungerState);
+        display.drawText(30, screenHeight, hungerState);
     },
     handleInput: function (inputType, inputData) {
         if (this._gameEnded) {
