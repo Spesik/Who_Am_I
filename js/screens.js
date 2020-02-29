@@ -11,6 +11,13 @@ Game.Screen.startScreen = {
     render: function (display) {
         display.drawText(1, 1, "%c{red}Who Am I?");
         display.drawText(1, 2, "%c{yellow}Press [Enter] to start!");
+        display.drawText(1, 17, "%c{lime}Controls:");
+        display.drawText(1, 18, "%c{lime}[arrows] - Movement");
+        display.drawText(1, 19, "%c{lime}[i] - Inventory");
+        display.drawText(1, 20, "%c{lime}[d] - Drop item");
+        display.drawText(1, 21, "%c{lime}[e] - Eat");
+        display.drawText(1, 22, "%c{lime}[w] - check Wear");
+        display.drawText(1, 23, "%c{lime}[r] - Raise item");
     },
     handleInput: function (inputType, inputData) {
         if (inputType === 'keydown') {
