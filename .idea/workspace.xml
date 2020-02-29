@@ -3,7 +3,6 @@
   <component name="ChangeListManager">
     <list default="true" id="76b41bd2-58f1-4713-88c0-91d63ea9ba31" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/js/screens.js" beforeDir="false" afterPath="$PROJECT_DIR$/js/screens.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -90,7 +89,7 @@
       <workItem from="1582124198228" duration="2299000" />
       <workItem from="1582127401413" duration="2526000" />
       <workItem from="1582822674789" duration="705000" />
-      <workItem from="1582965137047" duration="939000" />
+      <workItem from="1582965137047" duration="4485000" />
     </task>
     <task id="LOCAL-00001" summary="Add cave generator">
       <created>1580323447840</created>
